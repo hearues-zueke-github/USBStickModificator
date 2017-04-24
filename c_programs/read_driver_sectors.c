@@ -43,11 +43,13 @@ void printBlock(uint8_t* block, int size, int width, int lab) {
 
 int main(int argc, char* argv[])
 {
+  // printf("Hello World!\n");
+  // exit(0);
   char file_path[] = "/dev/sdb";
   FILE* f_driver = fopen(file_path, "rb");
   system("mkdir -p sector");
   system("cd sector");
-  if (f_driver == 0)
+  if (f_driver == NULL)
   {
     printf("Can't open %s!\nreturn %d\n", file_path, -1);
   }
@@ -56,18 +58,37 @@ int main(int argc, char* argv[])
   uint8_t zero_block[SECTOR_SIZE];
   memset(zero_block, 0, SECTOR_SIZE);
   
+  char command[1024];
+  sprintf(command, "mkdir -p sector");
+  system(command);
 
-  char command[128];
+  char path[1024];
+  getcwd(path, sizeof(path));
+  printf("1: path: %s\n", path);
+  
+  char* cp;
+  cp = path;
+  for (; cp[0] != 0; cp++);
+  sprintf(cp, "/sector");
+  printf("2: path: %s\n", path);
+  chdir(path);
+
+  // exit(0);
+
   for (int cluster = 0; cluster < 16; cluster++) {
+    char folder_cluster_name[30] = {0};
+    sprintf(folder_cluster_name, "cluster_0x%08X", cluster);
+
+    sprintf(command, "mkdir -p %s", folder_cluster_name);
+    system(command);
+
+    for (; cp[0] != 0; cp++);
+    sprintf(cp, "/%s", folder_cluster_name);
+    printf("3: path: %s\n", path);
+    chdir(path);
+    exit(0);
+    
     for (int lba = 0; lba < 1024; lba++) {
-      char foder_cluster_name[30] = {0};
-      sprintf(foder_cluster_name, "cluster_0x%08X", cluster);
-
-      sprintf(command, "mkdir -p %s", foder_cluster_name);
-      system(command);
-      sprintf(command, "cd %s", foder_cluster_name);
-      system(command);
-
       fseek (f_driver, (cluster*16+lba)*SECTOR_SIZE, SEEK_SET);
 
       int read = fread(block, sizeof(uint8_t), SECTOR_SIZE, f_driver);
@@ -75,26 +96,28 @@ int main(int argc, char* argv[])
         printf("Failed to read in!\n");
         return -1;
       }
-      
-      char file_path_out[30] = {0};
-      char* c = file_path_out;
-      // sprintf(c, "%s", "sector/");
-      // for (; *c != 0; c++) {}
-      sprintf(c, "0x%07X.txt", lba);
-      // for (; *c != 0; c++) {}
-      // sprintf(c, "%s", ".txt");
 
       if (memcmp(zero_block, block, SECTOR_SIZE) == 0) {
         continue;
       }
+      
+      char fout_name[30] = {0};
+      sprintf(file_path, "0x%07X.txt", lba);
 
-      FILE* fout = fopen(file_path_out, "wb");
+      FILE* fout = fopen(fout_name, "wb");
+      if (fout == NULL) {
+        printf("No file %s open!\n", fout_name);
+        continue;
+      }
       fwrite(block, sizeof(char), sizeof(block), fout);
       fclose(fout);
-
-      sprintf(command, "cd ..");
-      system(command);
     }
+    
+    for (; *cp != 0; cp++);
+    for (; *cp != '/'; cp--) { *cp = 0; }
+    *cp = 0;
+    printf("path: %s\n", path);
+    chdir(path);
   }
 
   fclose(f_driver);
