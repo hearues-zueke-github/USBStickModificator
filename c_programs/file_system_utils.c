@@ -42,7 +42,7 @@ void printBlock(uint8_t* block, int size, int width) {
 }
 
 void printSector(uint8_t* block, int size, int width, int lba) {
-  printf(AC_CYAN "lba: %d\n" AC_RESET, lba);
+  printf(AC_CYAN "lba: (dec: %d| hex: 0x%X)\n" AC_RESET, lba, lba);
   printBlock(block, size, width);
 }
 

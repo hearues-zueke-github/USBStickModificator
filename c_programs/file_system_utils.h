@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/types.h>
 
 #define SECTOR_SIZE 0x200 // 512
 
