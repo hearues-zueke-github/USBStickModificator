@@ -64,18 +64,19 @@ int main(int argc, char* argv[])
 
   char path[1024];
   getcwd(path, sizeof(path));
-  printf("1: path: %s\n", path);
+  printf("path: %s\n", path);
   
   char* cp;
   cp = path;
   for (; cp[0] != 0; cp++);
   sprintf(cp, "/sector");
-  printf("2: path: %s\n", path);
+  printf("path: %s\n", path);
   chdir(path);
 
   // exit(0);
 
-  for (int cluster = 0; cluster < 16; cluster++) {
+  int cluster_amount = 32;
+  for (int cluster = 0; cluster < cluster_amount; cluster++) {
     char folder_cluster_name[30] = {0};
     sprintf(folder_cluster_name, "cluster_0x%08X", cluster);
 
@@ -84,12 +85,11 @@ int main(int argc, char* argv[])
 
     for (; cp[0] != 0; cp++);
     sprintf(cp, "/%s", folder_cluster_name);
-    printf("3: path: %s\n", path);
+    printf("path: %s\n", path);
     chdir(path);
-    exit(0);
     
     for (int lba = 0; lba < 1024; lba++) {
-      fseek (f_driver, (cluster*16+lba)*SECTOR_SIZE, SEEK_SET);
+      fseek (f_driver, (cluster*cluster_amount+lba)*SECTOR_SIZE, SEEK_SET);
 
       int read = fread(block, sizeof(uint8_t), SECTOR_SIZE, f_driver);
       if (!read) {
@@ -102,7 +102,7 @@ int main(int argc, char* argv[])
       }
       
       char fout_name[30] = {0};
-      sprintf(file_path, "0x%07X.txt", lba);
+      sprintf(fout_name, "0x%07X.txt", lba);
 
       FILE* fout = fopen(fout_name, "wb");
       if (fout == NULL) {
