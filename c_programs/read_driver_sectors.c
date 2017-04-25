@@ -1,50 +1,7 @@
-#include "read_driver_sectors.h"
-
-void testColorText() {
-  printf(AC_RED     "This text is RED!"     AC_RESET "\n");
-  printf(AC_GREEN   "This text is GREEN!"   AC_RESET "\n");
-  printf(AC_YELLOW  "This text is YELLOW!"  AC_RESET "\n");
-  printf(AC_BLUE    "This text is BLUE!"    AC_RESET "\n");
-  printf(AC_MAGENTA "This text is MAGENTA!" AC_RESET "\n");
-  printf(AC_CYAN    "This text is CYAN!"    AC_RESET "\n");
-}
-
-void printBlock(uint8_t* block, int size, int width, int lab) {
-  // print other arguments
-  printf(AC_CYAN "LAB = %d\n" AC_RESET, lab);
-
-  // prepare first row for numbering
-  printf("      ");
-  for (int loop = 0; loop < 16; loop++) {
-    printf(AC_GREEN " %2X" AC_RESET, loop);
-  }
-  printf("\n");
-
-  // print the whole sector
-  for (int loop = 0; loop < size; loop++) {
-    if (loop % width == 0) {
-      printf(AC_YELLOW "0x%3X:" AC_RESET, loop);
-    }
-
-    if (loop % 2 == 0) {
-      printf(AC_D_W);
-    } else {
-      printf(AC_B_W);
-    }
-
-    printf(" %02X", block[loop] & 0xFF);
-    printf(AC_RESET);
-
-    if (loop != width && loop % width == width - 1) {
-      printf("\n");
-    }
-  }
-}
+#include "file_system_utils.h"
 
 int main(int argc, char* argv[])
 {
-  // printf("Hello World!\n");
-  // exit(0);
   char file_path[] = "/dev/sdb";
   FILE* f_driver = fopen(file_path, "rb");
   system("mkdir -p sector");
@@ -54,10 +11,38 @@ int main(int argc, char* argv[])
     printf("Can't open %s!\nreturn %d\n", file_path, -1);
   }
 
+  printf("sizeof(MBREntry): %lu\n", sizeof(MBREntry));
+  printf("sizeof(MBRBlock): %lu\n", sizeof(MBRBlock));
+
+  MBRBlock mbr_block;
+  fseek(f_driver, 0, SEEK_SET);
+  fread(&mbr_block, 1, SECTOR_SIZE, f_driver);
+  printMBRBlock(&mbr_block);
+
   uint8_t block[SECTOR_SIZE];
   uint8_t zero_block[SECTOR_SIZE];
   memset(zero_block, 0, SECTOR_SIZE);
   
+  fseek(f_driver, 0, SEEK_SET);
+  fread(block, 1, SECTOR_SIZE, f_driver);
+  printBlock(block, SECTOR_SIZE, 16);
+
+  fclose(f_driver);
+
+  FILE* f_driver_out = fopen(file_path, "wb");
+  fseek(f_driver_out, 0x1BE, SEEK_SET);
+  for (int i = 0; i < 0x40; i++) {
+      block[i] = i+1;
+  }
+  fwrite(block, 1, 0x40, f_driver_out);
+  fclose(f_driver_out);
+
+  FILE* f_mbr_sector = fopen("mbr_sector.hex", "wb");
+  fwrite(block, 1, SECTOR_SIZE, f_mbr_sector);
+  fclose(f_mbr_sector);
+  
+  exit(0);
+
   char command[1024];
   sprintf(command, "mkdir -p sector");
   system(command);
@@ -72,8 +57,6 @@ int main(int argc, char* argv[])
   sprintf(cp, "/sector");
   printf("2: path: %s\n", path);
   chdir(path);
-
-  // exit(0);
 
   for (int cluster = 0; cluster < 16; cluster++) {
     char folder_cluster_name[30] = {0};
