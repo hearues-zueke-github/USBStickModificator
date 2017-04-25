@@ -5,8 +5,11 @@
 #include <stdint.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/types.h>
 
 #define SECTOR_SIZE 0x200 // 512
+
+#define AC_RED_BOLD "\x1b[1;49;31m"
 
 #define AC_RED     "\x1b[31m"
 #define AC_GREEN   "\x1b[32m"
