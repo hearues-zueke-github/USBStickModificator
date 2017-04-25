@@ -1,7 +1,4 @@
-#include "file_system_utils.h"
-
-#define INPUT_LENGTH 1024
-#define COMMANDS 10
+#include "read_files_from_stick.h"
 
 char current_path[1024];
 
@@ -12,7 +9,6 @@ int read_input(char* input, char** commands, int* idx) {
     *idx = 1;
     int is_last_space = 0;
     // Get the whole input from the console
-    // while ((*c = getchar()) == ' ') { c++; }
     commands[0] = c;
     while ((*c = getchar()) != '\n') {
         length++;
@@ -112,26 +108,8 @@ int main(int argc, char* const argv[]) {
         }
 
         get_normal_input(idx, input, input_copy, commands);
-        // char* c = commands[idx-1];
-        // while (*c != 0) { c++; }
-        // memset(input_copy, 0, INPUT_LENGTH);
-        // memcpy(input_copy, input, (size_t)c-(size_t)input);
-        // char* c1 = input_copy+(int)(c-input);
-        // do {
-        //     c1--;
-        //     if (*c1 == 0) {
-        //         *c1 = ' ';
-        //     }
-        // } while (c1 != input_copy);
 
-        // printf("input_copy: %s\n", input_copy);
-
-        // printf("get input block:\n");
-        // printBlock((void*)input, INPUT_LENGTH, 16);
-
-        // printf("get input_copy block:\n");
-        // printBlock((void*)input_copy, INPUT_LENGTH, 16);
-
+        // TODO: need to move this to an other function!
         if (!strcmp(commands[0], "exit") ||
             !strcmp(commands[0], "e")) {
             printf("Exiting program...\n");
