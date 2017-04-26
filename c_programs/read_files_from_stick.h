@@ -11,6 +11,7 @@ typedef enum {
     DEFINES,
     SETFILE,
     DRIVER,
+    SETSUDO,
     GETSECTOR,
     WRITEAT,
     PRINTARGS,
@@ -36,6 +37,7 @@ void command_newprogram();
 void command_defines();
 void command_setfiles(char** commands, int idx);
 void command_driver(char** commands, int idx);
+void command_setsudo(char** commands, int idx);
 void command_getsector(char** commands, int idx);
 void command_printargs(int argc, char** argv);
 void command_cd(char** commands, int idx);

@@ -74,6 +74,8 @@ CommandNumber get_command_number(char* command_0) {
         return DRIVER;
     } else if (!strcmp(command_0, "getsector") || !strcmp(command_0, "gsec")) {
         return GETSECTOR;
+    } else if (!strcmp(command_0, "setsudo") || !strcmp(command_0, "ssudo")) {
+        return SETSUDO;
     } else if (!strcmp(command_0, "writeat") || !strcmp(command_0, "w")) {
         return WRITEAT;
     } else if (!strcmp(command_0, "printargs")) {
@@ -148,7 +150,7 @@ void command_getsector(char** commands, int idx) {
 
     FILE* f_drive = fopen(file_path, "rb");
     if (f_drive == NULL) {
-        printf(AC_RED_BOLD "Error:" AC_RESET " file " AC_GREEN "%s" AC_RESET " does not exist\n", file_path);
+        printf(AC_RED_BOLD "Error:" AC_RESET " file " AC_GREEN "%s" AC_RESET " does not exist!\n", file_path);
         return;
     }
     uint8_t block[SECTOR_SIZE];
@@ -156,6 +158,20 @@ void command_getsector(char** commands, int idx) {
     fread((void*)block, 1, SECTOR_SIZE, f_drive);
     fclose(f_drive);
     printSector(block, SECTOR_SIZE, 16, lba);
+}
+
+void command_setsudo(char** commands, int idx) {
+    // TODO: do this check everywhere, before open a file!
+    if (access(file_path, F_OK)) {
+        printf(AC_RED_BOLD "Error:" AC_RESET " file " AC_GREEN "%s" AC_RESET " does not exist!\n", file_path);
+        return;
+    }
+    char username[1024];
+    getlogin_r(username, sizeof(username));
+    char bash_command[1024];
+    sprintf(bash_command, "sudo chown %s:%s %s", username, username, file_path);
+    system(bash_command);
+    printf("File " AC_GREEN "%s" AC_RESET " successfull given rights to user " AC_GREEN "%s" AC_RESET "\n", file_path, username);
 }
 
 void command_writeat(char** commands, int idx) {
@@ -298,6 +314,9 @@ int main(int argc, char* const argv[]) {
                 break;
             case GETSECTOR:
                 command_getsector(commands, idx);
+                break;
+            case SETSUDO:
+                command_setsudo(commands, idx);
                 break;
             case WRITEAT:
                 command_writeat(commands, idx);
