@@ -5,12 +5,19 @@ char file_path[1024];
 
 int read_input(char* input, char** commands, int* idx) {
     memset(input, 0, INPUT_LENGTH);
-    char* c = input;
     int length = 0;
-    *idx = 1;
     int is_last_space = 0;
-    // Get the whole input from the console
+    char* c = input;
     commands[0] = c;
+    // Get the whole input from the console
+    *idx = 1;
+    while ((*c = getchar()) == ' ');
+    if (*c == '\n') {
+        *c = 0;
+        return 3;
+    }
+    c++;
+    length++;
     while ((*c = getchar()) != '\n') {
         length++;
         if (length >= INPUT_LENGTH) {
@@ -19,6 +26,9 @@ int read_input(char* input, char** commands, int* idx) {
         }
         if (*c == ' ') {
             *c = 0;
+            if (!is_last_space) {
+                c++;
+            }
             is_last_space = 1;
         } else if ((*c != ' ') && is_last_space) {
             commands[*idx] = c;
@@ -29,7 +39,9 @@ int read_input(char* input, char** commands, int* idx) {
             }
             is_last_space = 0;
         }
-        c++;
+        if (!is_last_space) {
+            c++;
+        }
     }
 
     *c = 0;
@@ -41,13 +53,21 @@ void print_error_message(int error_ret) {
     switch (error_ret) {
         case 1:
             printf(AC_RED_BOLD "Error:" AC_RESET " max char length: %d\n", INPUT_LENGTH);
+            break;
         case 2:
             printf(AC_RED_BOLD "Error:" AC_RESET " not more than %d commands!\n", COMMANDS);
+            break;
+        case 3:
+            break;
     }
 
 }
 
 void get_normal_input(int idx, char* input, char* input_copy, char** commands) {
+    if (idx == 0) {
+        *input_copy = 0;
+        return;
+    }
     char* c = commands[idx-1];
     while (*c != 0) { c++; }
     memset(input_copy, 0, INPUT_LENGTH);
@@ -174,37 +194,77 @@ void command_setsudo(char** commands, int idx) {
     printf("File " AC_GREEN "%s" AC_RESET " successfull given rights to user " AC_GREEN "%s" AC_RESET "\n", file_path, username);
 }
 
+// TODO: fix command_writeat
 void command_writeat(char** commands, int idx) {
     if (idx < 3) {
         printf(AC_RED_BOLD "Error:" AC_RESET " 2 arguments needed! (first: pos, second: byte value)\n"); 
-        return; 
+        return;
     }
 
+    int is_with_sector = 0;
+    commands++;
+    if (!strcmp(*commands, "-s") || !strcmp(*commands, "--sector")) {
+        if (idx < 5) {
+            printf(AC_RED_BOLD "Error:" AC_RESET " with sector 4 arguments needed, e.g.: " AC_YELLOW "writeat s 0x800 (0x000-0x1FF) (0x00-0xFF)" AC_RESET "\n"); 
+            return;
+        }
+    }
+
+    int sector = 0;
     int pos = 0;
     uint8_t byte = 0;
 
-    if (is_number_decimal(commands[1])) {
-        pos = strtol(commands[1], NULL, 10);
-    } else if (is_number_hex(commands[1])) {
-        pos = strtol(commands[1], NULL, 16);
+    commands++;
+    if (is_number_decimal(*commands)) {
+        pos = strtol(*commands, NULL, 10);
+    } else if (is_number_hex(*commands)) {
+        pos = strtol(*commands, NULL, 16);
     } else {
-        printf(AC_RED_BOLD "Error:" AC_RESET " first argument is not a decimal number!\n");  
+        printf(AC_RED_BOLD "Error:" AC_RESET " first argument is not a decimal or hex number!\n");
         return;
     }
 
-    if (is_number_decimal(commands[2])) {
-        byte = strtol(commands[2], NULL, 10) % 0x100;
-    } else if (is_number_hex(commands[1])) {
-        byte = strtol(commands[2], NULL, 16) % 0x100;
+    if (idx >= 5) {
+        sector = pos;
+        is_with_sector = 1;
+        commands++;
+        if (is_number_decimal(*commands)) {
+            pos = pos*SECTOR_SIZE+(strtol(*commands, NULL, 10)%SECTOR_SIZE);
+        } else if (is_number_hex(*commands)) {
+            pos = pos*SECTOR_SIZE+(strtol(*commands, NULL, 16)%SECTOR_SIZE);
+        } else {
+            printf(AC_RED_BOLD "Error:" AC_RESET " second argument is not a decimal number!\n");  
+            return;
+        }
+    }
+
+    commands++;
+    if (is_number_decimal(*commands)) {
+        byte = strtol(*commands, NULL, 10) % 0x100;
+    } else if (is_number_hex(*commands)) {
+        byte = strtol(*commands, NULL, 16) % 0x100;
     } else {
-        printf(AC_RED_BOLD "Error:" AC_RESET " second argument is not a decimal number!\n");
+        if (is_with_sector) {
+            printf(AC_RED_BOLD "Error:" AC_RESET " third argument is not a decimal number!\n");
+        } else {
+            printf(AC_RED_BOLD "Error:" AC_RESET " second argument is not a decimal number!\n");
+        }
         return;
     }
+
     FILE* f_drive = fopen(file_path, "wb");
-    fseek(f_drive, pos, SEEK_SET);
+    if (f_drive == NULL) {
+        printf(AC_RED_BOLD "Error:" AC_RESET " file " AC_GREEN "%s" AC_RESET " does not exist!\n", file_path);
+        return;
+    }
+    fseek(f_drive, sector*SECTOR_SIZE+pos, SEEK_SET);
     fwrite((void*)&byte, 1, 1, f_drive);
     fclose(f_drive);
-    printf("Successfully written at pos " AC_GREEN "0x%X" AC_RESET " byte " AC_GREEN "0x%X" AC_RESET " in file " AC_GREEN "%s" AC_RESET "\n", pos, byte, file_path);
+    if (!is_with_sector) {
+        printf("Successfully written at pos " AC_GREEN "0x%X" AC_RESET " byte " AC_GREEN "0x%X" AC_RESET " in file " AC_GREEN "%s" AC_RESET "\n", pos, byte, file_path);
+    } else {
+        printf("Successfully written at sector " AC_GREEN "0x%X" AC_RESET " pos " AC_GREEN "0x%X" AC_RESET " byte " AC_GREEN "0x%X" AC_RESET " in file " AC_GREEN "%s" AC_RESET "\n", sector, pos, byte, file_path);
+    }
 }
 
 void command_printargs(int argc, char** argv) {
@@ -283,8 +343,8 @@ int main(int argc, char* const argv[]) {
     char* commands[COMMANDS];
     while (1) {
         printf("%s: ", current_path);
-
         int idx = 0;
+        // printf("Test");
         int error_ret = read_input(input, commands, &idx);
 
         if (error_ret) {
@@ -294,7 +354,12 @@ int main(int argc, char* const argv[]) {
 
         get_normal_input(idx, input, input_copy, commands);
 
+        for (int i = 0; i < idx; i++) {
+            printf("command %d: %s\n", i, *(commands+i));
+        }
+
         CommandNumber cn = get_command_number(commands[0]);
+
         int is_exiting_program = 0;
         switch (cn) {
             case EXIT:
