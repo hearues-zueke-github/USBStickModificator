@@ -140,12 +140,14 @@ void command_driver(char** commands, int idx) {
 
 void command_getsector(char** commands, int idx) {
     int lba = 0;
+    // TODO: check if idx > 1
     if (is_number_decimal(commands[1])) {
         lba = strtol(commands[1], NULL, 10);
     } else if (is_number_hex(commands[1])) {
         lba = strtol(commands[1], NULL, 16);
     } else {
         printf(AC_RED_BOLD "Error:" AC_RESET " 1st argument is not a decimal or hex number!\n");  
+        return;
     }
 
     FILE* f_drive = fopen(file_path, "rb");
