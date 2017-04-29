@@ -12,9 +12,13 @@ void testColorText() {
 void printBlock(uint8_t* block, int size, int width) {
   // prepare first row for numbering
   printf("      ");
-  for (int loop = 0; loop < 16; loop++) {
+  for (int loop = 0; loop < width; loop++) {
     printf(AC_GREEN " %02X" AC_RESET, loop);
   }
+  // printf("   ");
+  // for (int loop = 0; loop < width; loop++) {
+  //   printf(AC_GREEN "%1X" AC_RESET, loop % 16);
+  // }
   printf("\n");
 
   //print the whole sector
@@ -33,6 +37,10 @@ void printBlock(uint8_t* block, int size, int width) {
     printf(AC_RESET);
 
     if ((loop != width) && ((loop%width) == (width-1))) {
+      // printf("   ");
+      // for (int i = 0; i < width; i++) {
+      //   printf("%c", block[loop-width+1+i]);
+      // }
       printf("\n");
     }
   }
