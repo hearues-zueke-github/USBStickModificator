@@ -1,3 +1,6 @@
-*/read_driver_sectors
-*/mbr_sector.hex
-*/read_files_from_stick
+**/read_driver_sectors
+**/mbr_sector.hex
+**/read_files_from_stick
+**/zero_ones_sectors.txt
+**/.idea
+**/cmake-build-debug
