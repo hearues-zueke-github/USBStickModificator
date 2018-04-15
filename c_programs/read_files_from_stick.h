@@ -38,6 +38,8 @@ int is_number_hex(char* c);
 
 int convert_str_to_int(int* num, char* str_num);
 
+// TODO: command for init own filesystem on USB stick, e.g.
+
 void command_newprogram();
 void command_defines();
 void command_setfiles(char** commands, int idx);
